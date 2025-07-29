@@ -73,6 +73,7 @@
         if (track && track.getCapabilities) {
           const capabilities = track.getCapabilities();
           if (capabilities.zoom) {
+            alert('true');
             const zoomLevel = 6;
             track.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(e => {
               alert('Zoom not supported or failed:', e);

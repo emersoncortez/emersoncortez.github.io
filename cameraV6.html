@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escáner de Código de Barras</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background: #111;
+      color: white;
+      text-align: center;
+    }
+
+    h2 {
+      margin: 20px 0;
+    }
+
+    #scanner-container {
+      width: 100%;
+      max-width: 400px;
+      aspect-ratio: 9 / 16;
+      margin: auto;
+      position: relative;
+      background-color: black;
+      overflow: hidden;
+      border: 3px solid #333;
+      border-radius: 12px;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>Escanea un Código de Barras</h2>
+  <div id="scanner-container"></div>
+  <div id="result">Esperando código de barras...</div>
+
+  <!-- QuaggaJS desde CDN -->
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+
+  <script>
+    const resultEl = document.getElementById('result');
+    const scannerContainer = document.getElementById('scanner-container');
+
+    Quagga.init({
+      inputStream: {
+        type: "LiveStream",
+        target: scannerContainer,
+        constraints: {
+          facingMode: "environment",
+          aspectRatio: 9 / 16
+        }
+      },
+      decoder: {
+        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"]
+      },
+      locate: true
+    }, function(err) {
+      if (err) {
+        console.error(err);
+        resultEl.textContent = "Error al iniciar el escáner: " + err;
+        return;
+      }
+      Quagga.start();
+    });
+
+    let lastScannedAt = 0;
+
+    Quagga.onDetected(data => {
+      const code = data.codeResult.code;
+
+      const now = Date.now();
+
+      // Evita lecturas duplicadas en menos de 3 segundos
+      if (now - lastScannedAt > 3000) {
+        lastScannedAt = now;
+
+        const productUrl = `https://prices.nedostavka.net/es/product/${encodeURIComponent(code)}`;
+        resultEl.innerHTML = `Código detectado: <strong>${code}</strong>`;
+        window.open(productUrl, '_blank');
+      }
+    });
+  </script>
+</body>
+</html>
+

@@ -1,15 +1,17 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8" />
-  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <meta charset="UTF-8">
   <title>Barcode Scanner to Google Search</title>
   <style>
-    video {
+    #scanner-container {
       width: 100%;
       max-width: 600px;
-      border: 2px solid #333;
-      border-radius: 10px;
+      margin: auto;
+      position: relative;
+    }
+    #video {
+      width: 100%;
     }
     #result {
       margin-top: 20px;
@@ -22,46 +24,50 @@
 </head>
 <body>
   <h2>Scan a Barcode</h2>
-  <video id="video" autoplay></video>
+  <div id="scanner-container">
+    <div id="video"></div>
+  </div>
   <div id="result">Waiting for barcode...</div>
 
+  <!-- Include QuaggaJS from CDN -->
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+
   <script>
-    // Check for BarcodeDetector support
-    if ('BarcodeDetector' in window) {
-      const video = document.getElementById('video');
-      const result = document.getElementById('result');
-      const barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'code_128'] });
+    const resultEl = document.getElementById('result');
 
-      // Get user camera
-      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
-        .then(stream => {
-          video.srcObject = stream;
+    Quagga.init({
+      inputStream: {
+        type: "LiveStream",
+        target: document.querySelector('#video'),
+        constraints: {
+          facingMode: "environment" // Use rear camera if available
+        }
+      },
+      decoder: {
+        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"]
+      }
+    }, function(err) {
+      if (err) {
+        console.error(err);
+        resultEl.textContent = "Error initializing Quagga: " + err;
+        return;
+      }
+      Quagga.start();
+    });
 
-          const detectBarcode = () => {
-            barcodeDetector.detect(video)
-              .then(barcodes => {
-                if (barcodes.length > 0) {
-                  const code = barcodes[0].rawValue;
-                  result.innerHTML = `Barcode detected: <strong>${code}</strong><br>
-                    <a href="https://www.google.com/search?q=${encodeURIComponent(code)}" target="_blank">Search on Google</a>`;
-                } else {
-                  requestAnimationFrame(detectBarcode);
-                }
-              })
-              .catch(err => {
-                result.textContent = 'Error detecting barcode: ' + err;
-              });
-          };
+    let lastCode = null;
 
-          detectBarcode();
-        })
-        .catch(err => {
-          result.textContent = 'Camera access denied or not available.';
-        });
-
-    } else {
-      document.getElementById('result').textContent = 'BarcodeDetector is not supported in this browser.';
-    }
+    Quagga.onDetected(data => {
+      const code = data.codeResult.code;
+      if (code !== lastCode) {
+        lastCode = code;
+        console.log("Barcode detected:", code);
+        resultEl.innerHTML = `Barcode detected: <strong>${code}</strong><br>
+          <a href="https://www.google.com/search?q=${encodeURIComponent(code)}" target="_blank">Search on Google</a>`;
+        // Optional: Stop after first detection
+        Quagga.stop();
+      }
+    });
   </script>
 </body>
 </html>

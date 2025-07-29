@@ -67,6 +67,19 @@
         return;
       }
       Quagga.start();
+      // Try to apply 3x zoom if supported
+      Quagga.onProcessed(() => {
+        const track = Quagga.canvas.streamTrack;
+        if (track && track.getCapabilities) {
+          const capabilities = track.getCapabilities();
+          if (capabilities.zoom) {
+            const zoomLevel = Math.min(capabilities.zoom.max, 3);
+            track.applyConstraints({ advanced: [{ zoom: zoomLevel }] }).catch(e => {
+              console.warn('Zoom not supported or failed:', e);
+            });
+          }
+        }
+      });
     });
 
     let lastScannedAt = 0;

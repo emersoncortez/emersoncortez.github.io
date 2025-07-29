@@ -63,7 +63,7 @@
         lastCode = code;
         console.log("Barcode detected:", code);
         resultEl.innerHTML = `Barcode detected: <strong>${code}</strong><br>
-          <a href="https://www.google.com/search?q=${encodeURIComponent(code)}" target="_blank">Search on Google</a>`;
+          <a href="https://stavka.net/es/product/${encodeURIComponent(code)}" target="_blank">Ver producto</a>`;
         // Optional: Stop after first detection
         Quagga.stop();
       }

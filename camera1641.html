@@ -1,0 +1,106 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+  <meta charset="UTF-8">
+  <title>Escáner de Códigos de Barras</title>
+  <style>
+    body {
+      margin: 0;
+      font-family: Arial, sans-serif;
+      background-color: #111;
+      color: white;
+      text-align: center;
+    }
+
+    h2 {
+      margin: 20px 0;
+    }
+
+    #scanner-container {
+      width: 100%;
+      max-width: 720px;
+      aspect-ratio: 16 / 9;
+      margin: auto;
+      background: black;
+      border: 3px solid #333;
+      border-radius: 12px;
+      overflow: hidden;
+      position: relative;
+    }
+
+    #result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+      color: #ccc;
+    }
+  </style>
+</head>
+<body>
+  <h2>Escanea un Código de Barras</h2>
+  <div id="scanner-container"></div>
+  <div id="result">Esperando código de barras...</div>
+
+  <!-- QuaggaJS desde CDN -->
+  <script src="https://unpkg.com/@ericblade/quagga2@1.2.6/dist/quagga.min.js"></script>
+
+  <script>
+    const resultEl = document.getElementById('result');
+    const scannerContainer = document.getElementById('scanner-container');
+
+    // Iniciar escáner
+    Quagga.init({
+      inputStream: {
+        type: "LiveStream",
+        target: scannerContainer,
+        constraints: {
+          facingMode: "environment",
+          aspectRatio: 16 / 9
+        }
+      },
+      decoder: {
+        readers: ["ean_reader", "ean_8_reader", "code_128_reader", "upc_reader"]
+      },
+      locate: true
+    }, function(err) {
+      if (err) {
+        console.error(err);
+        resultEl.textContent = "Error al iniciar el escáner: " + err;
+        return;
+      }
+      Quagga.start();
+    });
+
+    // Intentar aplicar zoom 5x si es soportado
+    Quagga.onProcessed(() => {
+      const track = Quagga.canvas?.streamTrack;
+      if (track && track.getCapabilities) {
+        const capabilities = track.getCapabilities();
+        if (capabilities.zoom) {
+          const zoomLevel = Math.min(capabilities.zoom.max, 5);
+          track.applyConstraints({
+            advanced: [{ zoom: zoomLevel }]
+          }).catch(err => {
+            console.warn("Zoom no soportado o falló:", err);
+          });
+        }
+      }
+    });
+
+    // Controlar escaneo continuo con retardo
+    let lastScan = 0;
+    Quagga.onDetected(data => {
+      const code = data.codeResult.code;
+      const now = Date.now();
+
+      if (now - lastScan > 3000) { // 3 segundos entre lecturas
+        lastScan = now;
+
+        const productUrl = `https://prices.nedostavka.net/es/product/${encodeURIComponent(code)}`;
+        resultEl.innerHTML = `Código detectado: <strong>${code}</strong>`;
+        window.open(productUrl, '_blank');
+      }
+    });
+  </script>
+</body>
+</html>
+

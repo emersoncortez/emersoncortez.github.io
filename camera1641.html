@@ -75,19 +75,13 @@ l<!DOCTYPE html>
       const track = Quagga.canvas?.streamTrack;
       if (track && track.getCapabilities) {
         const capabilities = track.getCapabilities();
-        alert('test');
         if (capabilities.zoom) {
-           console.warn("Zoom soportado");
           const zoomLevel = Math.min(capabilities.zoom.max, 5);
           track.applyConstraints({
             advanced: [{ zoom: zoomLevel }]
           }).catch(err => {
             console.warn("Zoom no soportado o falló:", err);
           });
-        }
-
-        else {
-          console.warn("Zoom no soportado o falló 2:", err);
         }
       }
     });

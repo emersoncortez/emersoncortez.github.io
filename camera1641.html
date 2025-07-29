@@ -84,8 +84,10 @@
             console.warn("Zoom no soportado o falló:", err);
           });
         }
-        else {
-          console.warn("Zoom no soportado");
+
+        {
+          console.warn("Zoom no soportado o falló 2:", err);
+        }
       }
     });
 
@@ -94,6 +96,7 @@
     Quagga.onDetected(data => {
       const code = data.codeResult.code;
       const now = Date.now();
+      
 
       if (now - lastScan > 3000) { // 3 segundos entre lecturas
         lastScan = now;

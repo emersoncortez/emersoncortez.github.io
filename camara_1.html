@@ -1,0 +1,68 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+  <title>Barcode Scanner to Google Search</title>
+  <style>
+    video {
+      width: 100%;
+      max-width: 600px;
+      border: 2px solid #333;
+      border-radius: 10px;
+    }
+    #result {
+      margin-top: 20px;
+      font-size: 1.2rem;
+    }
+    a {
+      color: blue;
+    }
+  </style>
+</head>
+<body>
+  <h2>Scan a Barcode</h2>
+  <video id="video" autoplay></video>
+  <div id="result">Waiting for barcode...</div>
+
+  <script>
+    // Check for BarcodeDetector support
+    if ('BarcodeDetector' in window) {
+      const video = document.getElementById('video');
+      const result = document.getElementById('result');
+      const barcodeDetector = new BarcodeDetector({ formats: ['ean_13', 'ean_8', 'upc_a', 'code_128'] });
+
+      // Get user camera
+      navigator.mediaDevices.getUserMedia({ video: { facingMode: "environment" } })
+        .then(stream => {
+          video.srcObject = stream;
+
+          const detectBarcode = () => {
+            barcodeDetector.detect(video)
+              .then(barcodes => {
+                if (barcodes.length > 0) {
+                  const code = barcodes[0].rawValue;
+                  result.innerHTML = `Barcode detected: <strong>${code}</strong><br>
+                    <a href="https://www.google.com/search?q=${encodeURIComponent(code)}" target="_blank">Search on Google</a>`;
+                } else {
+                  requestAnimationFrame(detectBarcode);
+                }
+              })
+              .catch(err => {
+                result.textContent = 'Error detecting barcode: ' + err;
+              });
+          };
+
+          detectBarcode();
+        })
+        .catch(err => {
+          result.textContent = 'Camera access denied or not available.';
+        });
+
+    } else {
+      document.getElementById('result').textContent = 'BarcodeDetector is not supported in this browser.';
+    }
+  </script>
+</body>
+</html>
+
